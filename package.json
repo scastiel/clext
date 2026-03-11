@@ -1,0 +1,118 @@
+{
+  "name": "clext",
+  "displayName": "CLext",
+  "description": "Claude Code diff navigator for VSCode",
+  "version": "0.0.1",
+  "publisher": "clext",
+  "engines": {
+    "vscode": "^1.84.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "clext",
+          "title": "CLext",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "clext": [
+        {
+          "id": "clext.changedFiles",
+          "name": "Changed Files"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "clext.switchMode.working",
+        "title": "Working Changes",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "clext.switchMode.lastCommit",
+        "title": "Last Commit",
+        "icon": "$(git-commit)"
+      },
+      {
+        "command": "clext.switchMode.branch",
+        "title": "vs Main",
+        "icon": "$(git-compare)"
+      },
+      {
+        "command": "clext.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "clext.askClaude",
+        "title": "Ask Claude About This"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "clext.switchMode.working",
+          "when": "view == clext.changedFiles",
+          "group": "navigation@1"
+        },
+        {
+          "command": "clext.switchMode.lastCommit",
+          "when": "view == clext.changedFiles",
+          "group": "navigation@2"
+        },
+        {
+          "command": "clext.switchMode.branch",
+          "when": "view == clext.changedFiles",
+          "group": "navigation@3"
+        },
+        {
+          "command": "clext.refresh",
+          "when": "view == clext.changedFiles",
+          "group": "navigation@4"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "clext.askClaude",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "CLext",
+      "properties": {
+        "clext.baseBranch": {
+          "type": "string",
+          "default": "main",
+          "description": "Base branch for the \"vs Main\" diff mode"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap",
+    "watch": "npm run build -- --watch",
+    "lint": "eslint src/",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "typecheck": "tsc --noEmit",
+    "package": "vsce package",
+    "vscode:prepublish": "npm run build -- --minify"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.84.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "@vscode/vsce": "^3.0.0",
+    "esbuild": "^0.24.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.5.0"
+  }
+}

@@ -1,0 +1,9 @@
+src/
+node_modules/
+.vscode/
+docs/
+*.ts
+tsconfig.json
+eslint.config.js
+.prettierrc.json
+CLAUDE.md
