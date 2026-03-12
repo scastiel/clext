@@ -130,6 +130,12 @@ export class ChangedFilesTreeProvider implements vscode.TreeDataProvider<TreeNod
         title: "Show Diff",
         arguments: [action.left, action.right, action.title],
       };
+    } else if (action.type === "message") {
+      item.command = {
+        command: "clext.showMessage",
+        title: "Show Info",
+        arguments: [action.text],
+      };
     } else {
       item.command = {
         command: "vscode.open",

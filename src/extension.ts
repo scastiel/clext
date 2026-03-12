@@ -48,6 +48,9 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand("clext.switchMode.branch.active", () => {}),
 
     vscode.commands.registerCommand("clext.refresh", () => treeProvider.refresh()),
+    vscode.commands.registerCommand("clext.showMessage", (text: string) =>
+      vscode.window.showInformationMessage(text)
+    ),
     vscode.commands.registerCommand("clext.askClaude", () => askClaude()),
 
     vscode.commands.registerCommand("clext.collapseAll", async () => {

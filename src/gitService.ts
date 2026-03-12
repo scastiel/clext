@@ -19,6 +19,11 @@ const DELETED_STATUSES: Set<Status> = new Set([
   15, // DELETED_BY_THEM
 ] as Status[]);
 
+const RENAMED_STATUSES: Set<Status> = new Set([
+  3, // INDEX_RENAMED
+  10, // INTENT_TO_RENAME
+] as Status[]);
+
 export class GitService {
   private api: API | undefined;
   private readonly onDidChangeEmitter = new vscode.EventEmitter<void>();
@@ -87,26 +92,38 @@ export class GitService {
   getFileAction(
     change: Change,
     mode: DiffMode
-  ): { type: "diff"; left: vscode.Uri; right: vscode.Uri; title: string } | { type: "open" } {
+  ):
+    | { type: "diff"; left: vscode.Uri; right: vscode.Uri; title: string }
+    | { type: "open" }
+    | { type: "message"; text: string } {
     if (!this.api) {
       return { type: "open" };
     }
 
-    const isAdded = ADDED_STATUSES.has(change.status);
-    const isDeleted = DELETED_STATUSES.has(change.status);
     const filePath = vscode.workspace.asRelativePath(change.uri);
+
+    if (DELETED_STATUSES.has(change.status)) {
+      return { type: "message", text: `${filePath} was deleted` };
+    }
+
+    if (RENAMED_STATUSES.has(change.status)) {
+      const originalPath = vscode.workspace.asRelativePath(change.originalUri);
+      return { type: "message", text: `${originalPath} was renamed to ${filePath}` };
+    }
+
+    const isAdded = ADDED_STATUSES.has(change.status);
     const emptyUri = this.api.toGitUri(change.uri, "~");
 
     switch (mode) {
       case DiffMode.Working: {
         const left = isAdded ? emptyUri : this.api.toGitUri(change.uri, "HEAD");
-        const right = isDeleted ? emptyUri : change.uri;
+        const right = change.uri;
         return { type: "diff", left, right, title: `${filePath} (Working)` };
       }
 
       case DiffMode.LastCommit: {
         const left = isAdded ? emptyUri : this.api.toGitUri(change.uri, "HEAD~1");
-        const right = isDeleted ? emptyUri : this.api.toGitUri(change.uri, "HEAD");
+        const right = this.api.toGitUri(change.uri, "HEAD");
         return { type: "diff", left, right, title: `${filePath} (Last Commit)` };
       }
 
@@ -115,7 +132,7 @@ export class GitService {
           .getConfiguration("clext")
           .get<string>("baseBranch", "main");
         const left = isAdded ? emptyUri : this.api.toGitUri(change.uri, baseBranch);
-        const right = isDeleted ? emptyUri : this.api.toGitUri(change.uri, "HEAD");
+        const right = this.api.toGitUri(change.uri, "HEAD");
         return { type: "diff", left, right, title: `${filePath} (vs ${baseBranch})` };
       }
     }
