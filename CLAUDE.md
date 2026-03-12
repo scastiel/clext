@@ -53,7 +53,7 @@ src/
   extension.ts          - Entry point (activate/deactivate)
   gitService.ts         - Git Extension API wrapper
   changedFilesTree.ts   - TreeDataProvider for changed files
-  claudeIntegration.ts  - "Ask Claude" command
+  reviewComments.ts     - Review comments panel and logic
   types.ts              - Shared types and enums
 media/
   icon.svg              - Activity bar icon
@@ -64,3 +64,27 @@ docs/
 ## Testing the extension
 
 Press F5 in VSCode to launch the Extension Development Host. This opens a new VSCode window with the extension loaded. Use the command palette and the CLext sidebar panel to test.
+
+## Fixing issues
+
+When asked to fix issues or work on the next task:
+
+1. **Find an issue to work on.** List open issues with the `accepted` label:
+   ```
+   gh issue list --label accepted --state open
+   ```
+   Pick the one that looks easiest and has the fewest dependencies on other issues. If unsure, read the issue details with `gh issue view <number>`.
+
+2. **Create a branch** named after the issue:
+   ```
+   git checkout -b fix/<issue-number>-<short-description> main
+   ```
+
+3. **Implement the fix.** Follow all code style and architecture rules above. Run `npm run typecheck`, `npm run lint`, and `npm run format:check` before committing.
+
+4. **Push and open a PR** referencing the issue:
+   ```
+   git push -u origin HEAD
+   gh pr create --title "<short description>" --body "Fixes #<issue-number>"
+   ```
+   The PR description should explain what changed and why. Always include `Fixes #<number>` so the issue auto-closes on merge.
