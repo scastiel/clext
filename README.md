@@ -22,11 +22,15 @@ The active mode is shown as a filled dot in the toolbar. The base branch is conf
 
 ### Review Comments
 - Select code in any editor, right-click -> **"Add Review Comment"**
+- Right-click a file in the Changed Files tree -> **"Add Review Comment"** to comment on a file without selecting lines
+- **Add Global Comment** button (➕) in the Review Comments panel to add comments not tied to any file
 - Comments appear in the Review Comments panel below the file tree
 - Click a comment to jump to the relevant code
 - **Copy All** button formats comments as a list for pasting into Claude:
   ```
   Review comments:
+  - (general): consider splitting this into smaller commits
+  - src/foo.ts: this file should be split into smaller modules
   - src/foo.ts:10-15: this should use async/await
   - src/bar.ts:42-50: rename this variable
   ```

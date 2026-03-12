@@ -88,7 +88,9 @@ When asked to fix issues or work on the next task:
 
 3. **Implement the fix.** Follow all code style and architecture rules above. Run `npm run typecheck`, `npm run lint`, and `npm run format:check` before committing.
 
-4. **Push and open a PR** referencing the issue:
+4. **Update the README.** If the change affects user-facing features, commands, or behavior, update `README.md` to keep it in sync.
+
+5. **Push and open a PR** referencing the issue:
    ```
    git push -u origin HEAD
    gh pr create --title "<short description>" --body "Fixes #<issue-number>"
