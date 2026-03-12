@@ -31,6 +31,23 @@ export class GitService {
 
   private stateListener: vscode.Disposable | undefined;
 
+  /**
+   * Resolve a branch name to its remote tracking ref if available.
+   * e.g. "main" → "origin/main" when main tracks origin/main.
+   * Falls back to the original name if no upstream is found.
+   */
+  private async resolveBaseRef(repo: Repository, branchName: string): Promise<string> {
+    try {
+      const branch = await repo.getBranch(branchName);
+      if (branch.upstream) {
+        return `${branch.upstream.remote}/${branch.upstream.name}`;
+      }
+    } catch {
+      // Branch may not exist locally — use as-is
+    }
+    return branchName;
+  }
+
   async initialize(): Promise<boolean> {
     const gitExtension = vscode.extensions.getExtension<GitExtension>("vscode.git");
     if (!gitExtension) {
@@ -84,8 +101,9 @@ export class GitService {
         const baseBranch = vscode.workspace
           .getConfiguration("clext")
           .get<string>("baseBranch", "main");
-        const mergeBase = await repo.getMergeBase(baseBranch, "HEAD");
-        return repo.diffBetween(mergeBase ?? baseBranch, "HEAD");
+        const baseRef = await this.resolveBaseRef(repo, baseBranch);
+        const mergeBase = await repo.getMergeBase(baseRef, "HEAD");
+        return repo.diffBetween(mergeBase ?? baseRef, "HEAD");
       }
     }
   }
@@ -134,8 +152,9 @@ export class GitService {
           .getConfiguration("clext")
           .get<string>("baseBranch", "main");
         const repo = this.getRepository();
-        const mergeBase = repo ? await repo.getMergeBase(baseBranch, "HEAD") : undefined;
-        const baseRef = mergeBase ?? baseBranch;
+        const resolvedBase = repo ? await this.resolveBaseRef(repo, baseBranch) : baseBranch;
+        const mergeBase = repo ? await repo.getMergeBase(resolvedBase, "HEAD") : undefined;
+        const baseRef = mergeBase ?? resolvedBase;
         const left = isAdded ? emptyUri : this.api.toGitUri(change.uri, baseRef);
         const right = this.api.toGitUri(change.uri, "HEAD");
         return { type: "diff", left, right, title: `${filePath} (vs ${baseBranch})` };
