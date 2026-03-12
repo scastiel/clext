@@ -34,11 +34,12 @@ The active mode is shown as a filled dot in the toolbar. The base branch is conf
 
 ## Install
 
-```bash
-code --install-extension clext-0.0.1.vsix
-```
-
-Or in VSCode: Extensions view -> `...` menu -> **Install from VSIX...** -> select the `.vsix` file.
+1. Download the latest `.vsix` file from the [Releases page](https://github.com/scastiel/clext/releases)
+2. Install it:
+   ```bash
+   code --install-extension clext-*.vsix
+   ```
+   Or in VSCode: Extensions view -> `...` menu -> **Install from VSIX...** -> select the `.vsix` file.
 
 ## Settings
 
