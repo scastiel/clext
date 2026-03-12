@@ -83,6 +83,11 @@
         "title": "Add Review Comment"
       },
       {
+        "command": "clext.addGlobalReviewComment",
+        "title": "Add Global Comment",
+        "icon": "$(add)"
+      },
+      {
         "command": "clext.addFileReviewComment",
         "title": "Add Review Comment"
       },
@@ -150,14 +155,19 @@
           "group": "navigation@5"
         },
         {
-          "command": "clext.copyReviewComments",
+          "command": "clext.addGlobalReviewComment",
           "when": "view == clext.reviewComments",
           "group": "navigation@1"
         },
         {
-          "command": "clext.clearReviewComments",
+          "command": "clext.copyReviewComments",
           "when": "view == clext.reviewComments",
           "group": "navigation@2"
+        },
+        {
+          "command": "clext.clearReviewComments",
+          "when": "view == clext.reviewComments",
+          "group": "navigation@3"
         }
       ],
       "editor/context": [

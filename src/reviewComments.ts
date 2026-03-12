@@ -2,11 +2,11 @@ import * as vscode from "vscode";
 
 export interface ReviewComment {
   id: number;
-  filePath: string;
+  filePath: string | undefined;
   startLine: number | undefined;
   endLine: number | undefined;
   text: string;
-  uri: vscode.Uri;
+  uri: vscode.Uri | undefined;
 }
 
 export class ReviewCommentsProvider implements vscode.TreeDataProvider<ReviewComment> {
@@ -37,7 +37,14 @@ export class ReviewCommentsProvider implements vscode.TreeDataProvider<ReviewCom
     }
 
     const lines = this.comments.map((c) => {
-      const location = c.startLine ? `${c.filePath}:${c.startLine}-${c.endLine}` : c.filePath;
+      let location: string;
+      if (!c.filePath) {
+        location = "(general)";
+      } else if (c.startLine) {
+        location = `${c.filePath}:${c.startLine}-${c.endLine}`;
+      } else {
+        location = c.filePath;
+      }
       return `- ${location}: ${c.text}`;
     });
 
@@ -47,15 +54,21 @@ export class ReviewCommentsProvider implements vscode.TreeDataProvider<ReviewCom
   getTreeItem(element: ReviewComment): vscode.TreeItem {
     const item = new vscode.TreeItem(element.text, vscode.TreeItemCollapsibleState.None);
 
-    const location = element.startLine
-      ? `${element.filePath}:${element.startLine}-${element.endLine}`
-      : element.filePath;
+    let location: string;
+    if (!element.filePath) {
+      location = "(general)";
+    } else if (element.startLine) {
+      location = `${element.filePath}:${element.startLine}-${element.endLine}`;
+    } else {
+      location = element.filePath;
+    }
+
     item.description = location;
     item.tooltip = `${location}\n${element.text}`;
     item.contextValue = "reviewComment";
     item.iconPath = new vscode.ThemeIcon("comment");
 
-    if (element.startLine) {
+    if (element.uri && element.startLine) {
       item.command = {
         command: "vscode.open",
         title: "Go to Code",
@@ -64,7 +77,7 @@ export class ReviewCommentsProvider implements vscode.TreeDataProvider<ReviewCom
           { selection: new vscode.Range(element.startLine - 1, 0, element.startLine - 1, 0) },
         ],
       };
-    } else {
+    } else if (element.uri) {
       item.command = {
         command: "vscode.open",
         title: "Open File",
@@ -82,6 +95,26 @@ export class ReviewCommentsProvider implements vscode.TreeDataProvider<ReviewCom
   dispose(): void {
     this.onDidChangeTreeDataEmitter.dispose();
   }
+}
+
+export function addGlobalReviewComment(provider: ReviewCommentsProvider): void {
+  vscode.window
+    .showInputBox({
+      prompt: "Global review comment",
+      placeHolder: "e.g., consider splitting this into smaller commits",
+    })
+    .then((text) => {
+      if (!text) {
+        return;
+      }
+      provider.add({
+        filePath: undefined,
+        startLine: undefined,
+        endLine: undefined,
+        text,
+        uri: undefined,
+      });
+    });
 }
 
 export function addFileReviewComment(
