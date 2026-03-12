@@ -123,12 +123,18 @@ export class ChangedFilesTreeProvider implements vscode.TreeDataProvider<TreeNod
     const statusChar = STATUS_ICONS[element.change.status] ?? "?";
     item.description = statusChar;
 
-    const diffUris = this.gitService.getDiffUris(element.change, this.mode);
-    if (diffUris) {
+    const action = this.gitService.getFileAction(element.change, this.mode);
+    if (action.type === "diff") {
       item.command = {
         command: "vscode.diff",
         title: "Show Diff",
-        arguments: [diffUris.left, diffUris.right, diffUris.title],
+        arguments: [action.left, action.right, action.title],
+      };
+    } else {
+      item.command = {
+        command: "vscode.open",
+        title: "Open File",
+        arguments: [element.change.uri],
       };
     }
 

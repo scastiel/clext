@@ -1,6 +1,23 @@
 import * as vscode from "vscode";
-import type { API, GitExtension, Repository, Change } from "./git";
+import type { API, GitExtension, Repository, Change, Status } from "./git";
 import { DiffMode } from "./types";
+
+// Status values for added/deleted files
+const ADDED_STATUSES: Set<Status> = new Set([
+  1, // INDEX_ADDED
+  7, // UNTRACKED
+  9, // INTENT_TO_ADD
+  12, // ADDED_BY_US
+  13, // ADDED_BY_THEM
+  16, // BOTH_ADDED
+] as Status[]);
+
+const DELETED_STATUSES: Set<Status> = new Set([
+  2, // INDEX_DELETED
+  6, // DELETED
+  14, // DELETED_BY_US
+  15, // DELETED_BY_THEM
+] as Status[]);
 
 export class GitService {
   private api: API | undefined;
@@ -67,37 +84,39 @@ export class GitService {
     }
   }
 
-  getDiffUris(
+  getFileAction(
     change: Change,
     mode: DiffMode
-  ): { left: vscode.Uri; right: vscode.Uri; title: string } | undefined {
-    const repo = this.getRepository();
-    if (!repo || !this.api) {
-      return undefined;
+  ): { type: "diff"; left: vscode.Uri; right: vscode.Uri; title: string } | { type: "open" } {
+    if (!this.api) {
+      return { type: "open" };
     }
 
+    const isAdded = ADDED_STATUSES.has(change.status);
+    const isDeleted = DELETED_STATUSES.has(change.status);
     const filePath = vscode.workspace.asRelativePath(change.uri);
+    const emptyUri = this.api.toGitUri(change.uri, "~");
 
     switch (mode) {
       case DiffMode.Working: {
-        const left = this.api.toGitUri(change.uri, "HEAD");
-        const right = change.uri;
-        return { left, right, title: `${filePath} (Working)` };
+        const left = isAdded ? emptyUri : this.api.toGitUri(change.uri, "HEAD");
+        const right = isDeleted ? emptyUri : change.uri;
+        return { type: "diff", left, right, title: `${filePath} (Working)` };
       }
 
       case DiffMode.LastCommit: {
-        const left = this.api.toGitUri(change.uri, "HEAD~1");
-        const right = this.api.toGitUri(change.uri, "HEAD");
-        return { left, right, title: `${filePath} (Last Commit)` };
+        const left = isAdded ? emptyUri : this.api.toGitUri(change.uri, "HEAD~1");
+        const right = isDeleted ? emptyUri : this.api.toGitUri(change.uri, "HEAD");
+        return { type: "diff", left, right, title: `${filePath} (Last Commit)` };
       }
 
       case DiffMode.Branch: {
         const baseBranch = vscode.workspace
           .getConfiguration("clext")
           .get<string>("baseBranch", "main");
-        const left = this.api.toGitUri(change.uri, baseBranch);
-        const right = this.api.toGitUri(change.uri, "HEAD");
-        return { left, right, title: `${filePath} (vs ${baseBranch})` };
+        const left = isAdded ? emptyUri : this.api.toGitUri(change.uri, baseBranch);
+        const right = isDeleted ? emptyUri : this.api.toGitUri(change.uri, "HEAD");
+        return { type: "diff", left, right, title: `${filePath} (vs ${baseBranch})` };
       }
     }
   }
