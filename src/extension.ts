@@ -15,18 +15,22 @@ export async function activate(context: vscode.ExtensionContext) {
   const treeProvider = new ChangedFilesTreeProvider(gitService);
   const treeView = vscode.window.createTreeView("clext.changedFiles", {
     treeDataProvider: treeProvider,
-    showCollapseAll: true,
   });
 
-  // Update view title with current mode
-  const updateTitle = () => {
-    treeView.title = DIFF_MODE_LABELS[treeProvider.getMode()];
+  const setCollapsed = (value: boolean) => {
+    vscode.commands.executeCommand("setContext", "clext.treeCollapsed", value);
   };
 
   const switchMode = async (mode: DiffMode) => {
     await treeProvider.setMode(mode);
-    updateTitle();
+    treeView.title = DIFF_MODE_LABELS[mode];
+    vscode.commands.executeCommand("setContext", "clext.mode", mode);
+    setCollapsed(false);
   };
+
+  // Set initial context
+  vscode.commands.executeCommand("setContext", "clext.mode", DiffMode.Working);
+  setCollapsed(false);
 
   context.subscriptions.push(
     treeView,
@@ -34,11 +38,27 @@ export async function activate(context: vscode.ExtensionContext) {
     treeProvider,
 
     vscode.commands.registerCommand("clext.switchMode.working", () => switchMode(DiffMode.Working)),
+    vscode.commands.registerCommand("clext.switchMode.working.active", () => {}),
     vscode.commands.registerCommand("clext.switchMode.lastCommit", () =>
       switchMode(DiffMode.LastCommit)
     ),
+    vscode.commands.registerCommand("clext.switchMode.lastCommit.active", () => {}),
     vscode.commands.registerCommand("clext.switchMode.branch", () => switchMode(DiffMode.Branch)),
+    vscode.commands.registerCommand("clext.switchMode.branch.active", () => {}),
+
     vscode.commands.registerCommand("clext.refresh", () => treeProvider.refresh()),
+
+    vscode.commands.registerCommand("clext.collapseAll", async () => {
+      await vscode.commands.executeCommand(
+        "workbench.actions.treeView.clext.changedFiles.collapseAll"
+      );
+      setCollapsed(true);
+    }),
+
+    vscode.commands.registerCommand("clext.expandAll", async () => {
+      await treeProvider.refresh();
+      setCollapsed(false);
+    }),
 
     gitService.onDidChange(() => {
       if (treeProvider.getMode() === DiffMode.Working) {
@@ -47,7 +67,7 @@ export async function activate(context: vscode.ExtensionContext) {
     })
   );
 
-  updateTitle();
+  treeView.title = DIFF_MODE_LABELS[DiffMode.Working];
   await treeProvider.refresh();
 }
 

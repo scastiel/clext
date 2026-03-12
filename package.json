@@ -35,9 +35,19 @@
         "icon": "$(edit)"
       },
       {
+        "command": "clext.switchMode.working.active",
+        "title": "Working Changes (active)",
+        "icon": "$(circle-filled)"
+      },
+      {
         "command": "clext.switchMode.lastCommit",
         "title": "Last Commit",
         "icon": "$(git-commit)"
+      },
+      {
+        "command": "clext.switchMode.lastCommit.active",
+        "title": "Last Commit (active)",
+        "icon": "$(circle-filled)"
       },
       {
         "command": "clext.switchMode.branch",
@@ -45,9 +55,24 @@
         "icon": "$(git-compare)"
       },
       {
+        "command": "clext.switchMode.branch.active",
+        "title": "vs Main (active)",
+        "icon": "$(circle-filled)"
+      },
+      {
         "command": "clext.refresh",
         "title": "Refresh",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "clext.collapseAll",
+        "title": "Collapse All",
+        "icon": "$(collapse-all)"
+      },
+      {
+        "command": "clext.expandAll",
+        "title": "Expand All",
+        "icon": "$(expand-all)"
       },
       {
         "command": "clext.askClaude",
@@ -58,23 +83,48 @@
       "view/title": [
         {
           "command": "clext.switchMode.working",
-          "when": "view == clext.changedFiles",
+          "when": "view == clext.changedFiles && clext.mode != working",
+          "group": "navigation@1"
+        },
+        {
+          "command": "clext.switchMode.working.active",
+          "when": "view == clext.changedFiles && clext.mode == working",
           "group": "navigation@1"
         },
         {
           "command": "clext.switchMode.lastCommit",
-          "when": "view == clext.changedFiles",
+          "when": "view == clext.changedFiles && clext.mode != lastCommit",
+          "group": "navigation@2"
+        },
+        {
+          "command": "clext.switchMode.lastCommit.active",
+          "when": "view == clext.changedFiles && clext.mode == lastCommit",
           "group": "navigation@2"
         },
         {
           "command": "clext.switchMode.branch",
-          "when": "view == clext.changedFiles",
+          "when": "view == clext.changedFiles && clext.mode != branch",
           "group": "navigation@3"
+        },
+        {
+          "command": "clext.switchMode.branch.active",
+          "when": "view == clext.changedFiles && clext.mode == branch",
+          "group": "navigation@3"
+        },
+        {
+          "command": "clext.collapseAll",
+          "when": "view == clext.changedFiles && !clext.treeCollapsed",
+          "group": "navigation@4"
+        },
+        {
+          "command": "clext.expandAll",
+          "when": "view == clext.changedFiles && clext.treeCollapsed",
+          "group": "navigation@4"
         },
         {
           "command": "clext.refresh",
           "when": "view == clext.changedFiles",
-          "group": "navigation@4"
+          "group": "navigation@5"
         }
       ],
       "editor/context": [
