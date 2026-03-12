@@ -10,12 +10,14 @@ interface FolderNode {
   name: string;
   path: string;
   children: Map<string, TreeNode>;
+  parent: FolderNode | undefined;
 }
 
 interface FileNode {
   type: "file";
   name: string;
   change: Change;
+  parent: FolderNode | undefined;
 }
 
 const STATUS_ICONS: Partial<Record<Status, string>> = {
@@ -60,6 +62,7 @@ export class ChangedFilesTreeProvider implements vscode.TreeDataProvider<TreeNod
       const parts = relativePath.split("/");
 
       let current = root;
+      let parentNode: FolderNode | undefined;
       for (let i = 0; i < parts.length - 1; i++) {
         const folderName = parts[i];
         let existing = current.get(folderName);
@@ -69,25 +72,31 @@ export class ChangedFilesTreeProvider implements vscode.TreeDataProvider<TreeNod
             name: folderName,
             path: parts.slice(0, i + 1).join("/"),
             children: new Map(),
+            parent: parentNode,
           };
           current.set(folderName, existing);
         }
+        parentNode = existing;
         current = existing.children;
       }
 
       const fileName = parts[parts.length - 1];
-      current.set(fileName, { type: "file", name: fileName, change });
+      current.set(fileName, { type: "file", name: fileName, change, parent: parentNode });
     }
 
-    return this.flattenSingleChildFolders(root);
+    return this.flattenSingleChildFolders(root, undefined);
   }
 
-  private flattenSingleChildFolders(nodes: Map<string, TreeNode>): Map<string, TreeNode> {
+  private flattenSingleChildFolders(
+    nodes: Map<string, TreeNode>,
+    parent: FolderNode | undefined
+  ): Map<string, TreeNode> {
     const result = new Map<string, TreeNode>();
 
     for (const [key, node] of nodes) {
+      node.parent = parent;
       if (node.type === "folder") {
-        node.children = this.flattenSingleChildFolders(node.children);
+        node.children = this.flattenSingleChildFolders(node.children, node);
 
         if (node.children.size === 1) {
           const [childKey, child] = [...node.children.entries()][0];
@@ -97,7 +106,12 @@ export class ChangedFilesTreeProvider implements vscode.TreeDataProvider<TreeNod
               name: `${node.name}/${child.name}`,
               path: child.path,
               children: child.children,
+              parent,
             };
+            // Re-parent children to point to merged node
+            for (const grandchild of merged.children.values()) {
+              grandchild.parent = merged;
+            }
             result.set(`${key}/${childKey}`, merged);
             continue;
           }
@@ -149,6 +163,10 @@ export class ChangedFilesTreeProvider implements vscode.TreeDataProvider<TreeNod
 
   getRootNodes(): TreeNode[] {
     return this.sortNodes([...this.tree.values()]);
+  }
+
+  getParent(element: TreeNode): TreeNode | undefined {
+    return element.parent;
   }
 
   getChildren(element?: TreeNode): TreeNode[] {
