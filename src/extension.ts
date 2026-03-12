@@ -1,7 +1,12 @@
 import * as vscode from "vscode";
 import { GitService } from "./gitService";
 import { ChangedFilesTreeProvider } from "./changedFilesTree";
-import { ReviewCommentsProvider, addReviewComment, addFileReviewComment } from "./reviewComments";
+import {
+  ReviewCommentsProvider,
+  addGlobalReviewComment,
+  addReviewComment,
+  addFileReviewComment,
+} from "./reviewComments";
 import { DiffMode, DIFF_MODE_LABELS } from "./types";
 
 export async function activate(context: vscode.ExtensionContext) {
@@ -81,6 +86,9 @@ export async function activate(context: vscode.ExtensionContext) {
     // Review comments
     vscode.commands.registerCommand("clext.addReviewComment", () =>
       addReviewComment(reviewProvider)
+    ),
+    vscode.commands.registerCommand("clext.addGlobalReviewComment", () =>
+      addGlobalReviewComment(reviewProvider)
     ),
     vscode.commands.registerCommand("clext.addFileReviewComment", (fileNode) =>
       addFileReviewComment(reviewProvider, fileNode)
