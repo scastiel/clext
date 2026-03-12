@@ -1,18 +1,14 @@
 name: Release
 
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "Version to release (e.g. 0.1.0)"
-        required: true
-        type: string
+  release:
+    types: [created]
 
 permissions:
   contents: write
 
 jobs:
-  release:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,16 +19,13 @@ jobs:
 
       - run: npm ci
 
-      - name: Set version
-        run: npm version ${{ inputs.version }} --no-git-tag-version
+      - name: Set version from tag
+        run: npm version ${GITHUB_REF_NAME#v} --no-git-tag-version
 
       - name: Build and package
         run: npx vsce package --allow-missing-repository
 
-      - name: Create GitHub Release
+      - name: Attach .vsix to release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ inputs.version }}
-          name: v${{ inputs.version }}
           files: "*.vsix"
-          generate_release_notes: true
