@@ -75,6 +75,12 @@ When asked to fix issues or work on the next task:
    ```
    Pick the one that looks easiest and has the fewest dependencies on other issues. If unsure, read the issue details with `gh issue view <number>`.
 
+   **Skip issues that already have an open PR.** Check with:
+   ```
+   gh pr list --state open --search "fixes #<issue-number>"
+   ```
+   If a PR exists for that issue, move on to the next one.
+
 2. **Create a branch** named after the issue:
    ```
    git checkout -b fix/<issue-number>-<short-description> main
