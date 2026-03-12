@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { GitService } from "./gitService";
 import { ChangedFilesTreeProvider } from "./changedFilesTree";
-import { askClaude } from "./claudeIntegration";
+import { ReviewCommentsProvider, addReviewComment } from "./reviewComments";
 import { DiffMode, DIFF_MODE_LABELS } from "./types";
 
 export async function activate(context: vscode.ExtensionContext) {
@@ -16,6 +16,11 @@ export async function activate(context: vscode.ExtensionContext) {
   const treeProvider = new ChangedFilesTreeProvider(gitService);
   const treeView = vscode.window.createTreeView("clext.changedFiles", {
     treeDataProvider: treeProvider,
+  });
+
+  const reviewProvider = new ReviewCommentsProvider();
+  const reviewView = vscode.window.createTreeView("clext.reviewComments", {
+    treeDataProvider: reviewProvider,
   });
 
   const setCollapsed = (value: boolean) => {
@@ -35,9 +40,12 @@ export async function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     treeView,
+    reviewView,
     gitService,
     treeProvider,
+    reviewProvider,
 
+    // Mode switching
     vscode.commands.registerCommand("clext.switchMode.working", () => switchMode(DiffMode.Working)),
     vscode.commands.registerCommand("clext.switchMode.working.active", () => {}),
     vscode.commands.registerCommand("clext.switchMode.lastCommit", () =>
@@ -47,19 +55,17 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand("clext.switchMode.branch", () => switchMode(DiffMode.Branch)),
     vscode.commands.registerCommand("clext.switchMode.branch.active", () => {}),
 
+    // Tree controls
     vscode.commands.registerCommand("clext.refresh", () => treeProvider.refresh()),
     vscode.commands.registerCommand("clext.showMessage", (text: string) =>
       vscode.window.showInformationMessage(text)
     ),
-    vscode.commands.registerCommand("clext.askClaude", () => askClaude()),
-
     vscode.commands.registerCommand("clext.collapseAll", async () => {
       await vscode.commands.executeCommand(
         "workbench.actions.treeView.clext.changedFiles.collapseAll"
       );
       setCollapsed(true);
     }),
-
     vscode.commands.registerCommand("clext.expandAll", async () => {
       for (const node of treeProvider.getRootNodes()) {
         await treeView.reveal(node, { expand: 2 });
@@ -67,6 +73,27 @@ export async function activate(context: vscode.ExtensionContext) {
       setCollapsed(false);
     }),
 
+    // Review comments
+    vscode.commands.registerCommand("clext.addReviewComment", () =>
+      addReviewComment(reviewProvider)
+    ),
+    vscode.commands.registerCommand("clext.removeReviewComment", (comment) => {
+      reviewProvider.remove(comment.id);
+    }),
+    vscode.commands.registerCommand("clext.copyReviewComments", async () => {
+      const text = reviewProvider.copyAll();
+      if (!text) {
+        vscode.window.showInformationMessage("No review comments to copy.");
+        return;
+      }
+      await vscode.env.clipboard.writeText(text);
+      vscode.window.showInformationMessage("Review comments copied to clipboard.");
+    }),
+    vscode.commands.registerCommand("clext.clearReviewComments", () => {
+      reviewProvider.clearAll();
+    }),
+
+    // Auto-refresh
     gitService.onDidChange(() => {
       if (treeProvider.getMode() === DiffMode.Working) {
         treeProvider.refresh();

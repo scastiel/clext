@@ -25,6 +25,10 @@
         {
           "id": "clext.changedFiles",
           "name": "Changed Files"
+        },
+        {
+          "id": "clext.reviewComments",
+          "name": "Review Comments"
         }
       ]
     },
@@ -75,8 +79,23 @@
         "icon": "$(expand-all)"
       },
       {
-        "command": "clext.askClaude",
-        "title": "Ask Claude About This"
+        "command": "clext.addReviewComment",
+        "title": "Add Review Comment"
+      },
+      {
+        "command": "clext.copyReviewComments",
+        "title": "Copy All Comments",
+        "icon": "$(clippy)"
+      },
+      {
+        "command": "clext.clearReviewComments",
+        "title": "Clear All Comments",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "clext.removeReviewComment",
+        "title": "Remove Comment",
+        "icon": "$(close)"
       }
     ],
     "menus": {
@@ -125,12 +144,29 @@
           "command": "clext.refresh",
           "when": "view == clext.changedFiles",
           "group": "navigation@5"
+        },
+        {
+          "command": "clext.copyReviewComments",
+          "when": "view == clext.reviewComments",
+          "group": "navigation@1"
+        },
+        {
+          "command": "clext.clearReviewComments",
+          "when": "view == clext.reviewComments",
+          "group": "navigation@2"
         }
       ],
       "editor/context": [
         {
-          "command": "clext.askClaude",
+          "command": "clext.addReviewComment",
           "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "clext.removeReviewComment",
+          "when": "view == clext.reviewComments",
+          "group": "inline"
         }
       ]
     },
