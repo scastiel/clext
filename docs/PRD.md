@@ -74,15 +74,29 @@ The extension **does not reimplement** git operations or diff rendering. It orch
 
 ---
 
-## Feature 3: Ask Claude About Selection
+## Feature 3: Review Comments
 
 ### UX
 
 1. User selects lines of code in any editor (including diff editors).
-2. Right-click -> **"Ask Claude About This"** (context menu), or use a keyboard shortcut.
-3. A **quick input box** appears with the prompt: the file path and line range are pre-filled as context.
-4. User types their request (e.g., "refactor this to use async/await").
-5. The extension sends the message to the active Claude Code terminal.
+2. Right-click -> **"Add Review Comment"** (context menu).
+3. A **quick input box** appears: the file path and line range are pre-filled as context.
+4. User types their comment (e.g., "this should use async/await instead").
+5. The comment is added to a **Review Comments** panel displayed below the Changed Files tree in the CLext sidebar.
+6. Each comment shows the file path, line range, and the comment text.
+7. Comments can be removed individually via an inline delete button.
+8. A **"Copy All"** button in the Review Comments panel title bar copies all comments as a formatted list to the clipboard, ready to paste into a Claude conversation.
+9. A **"Clear All"** button removes all comments.
+
+### Comment format (when copied)
+
+```
+Review comments:
+- <file>:<startLine>-<endLine>: <comment text>
+- <file>:<startLine>-<endLine>: <comment text>
+```
+
+If no line range (whole file), just `<file>: <comment text>`.
 
 ### Implementation
 
@@ -90,18 +104,14 @@ The extension **does not reimplement** git operations or diff rendering. It orch
 - On trigger:
   - Get `vscode.window.activeTextEditor.selection` for the selected range.
   - Get the file path (relative to workspace root).
-  - If in a diff editor, resolve the actual file path from the diff URI.
-  - Show `vscode.window.showInputBox({ prompt: "What should Claude do with this code?" })`.
-  - Compose the message: `In <file>:<startLine>-<endLine>, <user's request>`
-  - Find the Claude Code terminal (search `vscode.window.terminals` for a terminal whose name contains "Claude" or that is running `claude`).
-  - Use `terminal.sendText(message)` to send it.
-- If no Claude Code terminal is found, show an informational message suggesting to start one.
-
-### Edge cases
-
-- **Diff editor**: The active file may be a virtual git URI. Extract the real file path from the URI query params.
-- **No selection**: If no text is selected, use the entire file as context (just send the file path, no line range).
-- **Multiple terminals**: If multiple Claude terminals exist, use the most recently active one, or let the user pick via `showQuickPick`.
+  - Show `vscode.window.showInputBox({ prompt: "Add review comment for <file>:<lines>" })`.
+  - Store the comment in an in-memory list.
+  - Refresh the Review Comments tree view.
+- The **Review Comments** view is a second `TreeDataProvider` registered under the same `clext` view container.
+- Each tree item shows the comment text as label and `file:lines` as description.
+- Clicking a comment opens the file at the relevant line.
+- "Copy All" serializes comments to the clipboard format above.
+- "Clear All" empties the list and refreshes.
 
 ---
 
@@ -128,6 +138,13 @@ contributes:
       - id: clext.changedFiles
         name: Changed Files
 
+  views:
+    clext:
+      - id: clext.changedFiles
+        name: Changed Files
+      - id: clext.reviewComments
+        name: Review Comments
+
   commands:
     - command: clext.switchMode.working
       title: "CLext: Working Changes"
@@ -135,14 +152,20 @@ contributes:
       title: "CLext: Last Commit"
     - command: clext.switchMode.branch
       title: "CLext: vs Main"
-    - command: clext.askClaude
-      title: "Ask Claude About This"
+    - command: clext.addReviewComment
+      title: "Add Review Comment"
+    - command: clext.copyReviewComments
+      title: "Copy All Comments"
+    - command: clext.clearReviewComments
+      title: "Clear All Comments"
+    - command: clext.removeReviewComment
+      title: "Remove Comment"
     - command: clext.refresh
       title: "CLext: Refresh"
 
   menus:
     editor/context:
-      - command: clext.askClaude
+      - command: clext.addReviewComment
 
     view/title:
       - command: clext.switchMode.working
@@ -157,6 +180,17 @@ contributes:
       - command: clext.refresh
         when: view == clext.changedFiles
         group: navigation
+      - command: clext.copyReviewComments
+        when: view == clext.reviewComments
+        group: navigation
+      - command: clext.clearReviewComments
+        when: view == clext.reviewComments
+        group: navigation
+
+    view/item/context:
+      - command: clext.removeReviewComment
+        when: view == clext.reviewComments
+        group: inline
 
   configuration:
     title: CLext
@@ -177,7 +211,7 @@ clext/
     extension.ts          # activate/deactivate, register commands
     gitService.ts         # Wraps Git Extension API, provides changed files per mode
     changedFilesTree.ts   # TreeDataProvider for the file tree
-    claudeIntegration.ts  # "Ask Claude" command logic
+    reviewComments.ts     # Review comments TreeDataProvider and logic
     types.ts              # Shared types, enums (DiffMode, etc.)
   media/
     icon.svg              # Activity bar icon
@@ -219,12 +253,14 @@ npm install -g yo generator-code @vscode/vsce
 4. Add mode toggle buttons to the view title bar.
 5. **Test**: See files in sidebar, click to open diffs, switch modes.
 
-### Phase 4: Ask Claude
+### Phase 4: Review Comments
 
-1. Implement `claudeIntegration.ts`.
-2. Register editor context menu command.
-3. Implement terminal discovery and `sendText`.
-4. **Test**: Select code, right-click, type request, verify it appears in Claude Code terminal.
+1. Implement `reviewComments.ts` with `TreeDataProvider` and in-memory comment store.
+2. Register editor context menu command for "Add Review Comment".
+3. Add Review Comments view below Changed Files in the sidebar.
+4. Implement "Copy All" (clipboard) and "Clear All" commands.
+5. Implement per-comment delete via inline button.
+6. **Test**: Select code, right-click, add comment, see it in sidebar, copy all, paste into Claude.
 
 ### Phase 5: Polish
 
