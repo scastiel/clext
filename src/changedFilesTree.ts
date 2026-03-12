@@ -3,7 +3,7 @@ import type { Change, Status } from "./git";
 import type { GitService } from "./gitService";
 import { DiffMode } from "./types";
 
-type TreeNode = FolderNode | FileNode;
+export type TreeNode = FolderNode | FileNode;
 
 interface FolderNode {
   type: "folder";
@@ -13,7 +13,7 @@ interface FolderNode {
   parent: FolderNode | undefined;
 }
 
-interface FileNode {
+export interface FileNode {
   type: "file";
   name: string;
   change: Change;
@@ -133,6 +133,7 @@ export class ChangedFilesTreeProvider implements vscode.TreeDataProvider<TreeNod
     const item = new vscode.TreeItem(element.name, vscode.TreeItemCollapsibleState.None);
     item.iconPath = vscode.ThemeIcon.File;
     item.resourceUri = element.change.uri;
+    item.contextValue = "changedFile";
 
     const statusChar = STATUS_ICONS[element.change.status] ?? "?";
     item.description = statusChar;
