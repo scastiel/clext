@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { GitService } from "./gitService";
 import { ChangedFilesTreeProvider } from "./changedFilesTree";
+import { askClaude } from "./claudeIntegration";
 import { DiffMode, DIFF_MODE_LABELS } from "./types";
 
 export async function activate(context: vscode.ExtensionContext) {
@@ -47,6 +48,7 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand("clext.switchMode.branch.active", () => {}),
 
     vscode.commands.registerCommand("clext.refresh", () => treeProvider.refresh()),
+    vscode.commands.registerCommand("clext.askClaude", () => askClaude()),
 
     vscode.commands.registerCommand("clext.collapseAll", async () => {
       await vscode.commands.executeCommand(
