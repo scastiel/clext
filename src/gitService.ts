@@ -31,6 +31,23 @@ export class GitService {
 
   private stateListener: vscode.Disposable | undefined;
 
+  /**
+   * Resolve a branch name to its remote tracking ref if available.
+   * e.g. "main" → "origin/main" when main tracks origin/main.
+   * Falls back to the original name if no upstream is found.
+   */
+  private async resolveBaseRef(repo: Repository, branchName: string): Promise<string> {
+    try {
+      const branch = await repo.getBranch(branchName);
+      if (branch.upstream) {
+        return `${branch.upstream.remote}/${branch.upstream.name}`;
+      }
+    } catch {
+      // Branch may not exist locally — use as-is
+    }
+    return branchName;
+  }
+
   async initialize(): Promise<boolean> {
     const gitExtension = vscode.extensions.getExtension<GitExtension>("vscode.git");
     if (!gitExtension) {
@@ -84,18 +101,21 @@ export class GitService {
         const baseBranch = vscode.workspace
           .getConfiguration("clext")
           .get<string>("baseBranch", "main");
-        return repo.diffBetween(baseBranch, "HEAD");
+        const baseRef = await this.resolveBaseRef(repo, baseBranch);
+        const mergeBase = await repo.getMergeBase(baseRef, "HEAD");
+        return repo.diffBetween(mergeBase ?? baseRef, "HEAD");
       }
     }
   }
 
-  getFileAction(
+  async getFileAction(
     change: Change,
     mode: DiffMode
-  ):
+  ): Promise<
     | { type: "diff"; left: vscode.Uri; right: vscode.Uri; title: string }
     | { type: "open" }
-    | { type: "message"; text: string } {
+    | { type: "message"; text: string }
+  > {
     if (!this.api) {
       return { type: "open" };
     }
@@ -131,7 +151,11 @@ export class GitService {
         const baseBranch = vscode.workspace
           .getConfiguration("clext")
           .get<string>("baseBranch", "main");
-        const left = isAdded ? emptyUri : this.api.toGitUri(change.uri, baseBranch);
+        const repo = this.getRepository();
+        const resolvedBase = repo ? await this.resolveBaseRef(repo, baseBranch) : baseBranch;
+        const mergeBase = repo ? await repo.getMergeBase(resolvedBase, "HEAD") : undefined;
+        const baseRef = mergeBase ?? resolvedBase;
+        const left = isAdded ? emptyUri : this.api.toGitUri(change.uri, baseRef);
         const right = this.api.toGitUri(change.uri, "HEAD");
         return { type: "diff", left, right, title: `${filePath} (vs ${baseBranch})` };
       }
