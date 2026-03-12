@@ -147,9 +147,13 @@ export class ChangedFilesTreeProvider implements vscode.TreeDataProvider<TreeNod
     return item;
   }
 
+  getRootNodes(): TreeNode[] {
+    return this.sortNodes([...this.tree.values()]);
+  }
+
   getChildren(element?: TreeNode): TreeNode[] {
     if (!element) {
-      return this.sortNodes([...this.tree.values()]);
+      return this.getRootNodes();
     }
     if (element.type === "folder") {
       return this.sortNodes([...element.children.values()]);

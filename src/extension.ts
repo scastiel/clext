@@ -61,7 +61,9 @@ export async function activate(context: vscode.ExtensionContext) {
     }),
 
     vscode.commands.registerCommand("clext.expandAll", async () => {
-      await treeProvider.refresh();
+      for (const node of treeProvider.getRootNodes()) {
+        await treeView.reveal(node, { expand: 2 });
+      }
       setCollapsed(false);
     }),
 
