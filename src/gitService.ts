@@ -84,18 +84,20 @@ export class GitService {
         const baseBranch = vscode.workspace
           .getConfiguration("clext")
           .get<string>("baseBranch", "main");
-        return repo.diffBetween(baseBranch, "HEAD");
+        const mergeBase = await repo.getMergeBase(baseBranch, "HEAD");
+        return repo.diffBetween(mergeBase ?? baseBranch, "HEAD");
       }
     }
   }
 
-  getFileAction(
+  async getFileAction(
     change: Change,
     mode: DiffMode
-  ):
+  ): Promise<
     | { type: "diff"; left: vscode.Uri; right: vscode.Uri; title: string }
     | { type: "open" }
-    | { type: "message"; text: string } {
+    | { type: "message"; text: string }
+  > {
     if (!this.api) {
       return { type: "open" };
     }
@@ -131,7 +133,10 @@ export class GitService {
         const baseBranch = vscode.workspace
           .getConfiguration("clext")
           .get<string>("baseBranch", "main");
-        const left = isAdded ? emptyUri : this.api.toGitUri(change.uri, baseBranch);
+        const repo = this.getRepository();
+        const mergeBase = repo ? await repo.getMergeBase(baseBranch, "HEAD") : undefined;
+        const baseRef = mergeBase ?? baseBranch;
+        const left = isAdded ? emptyUri : this.api.toGitUri(change.uri, baseRef);
         const right = this.api.toGitUri(change.uri, "HEAD");
         return { type: "diff", left, right, title: `${filePath} (vs ${baseBranch})` };
       }

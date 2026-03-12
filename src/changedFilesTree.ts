@@ -123,7 +123,7 @@ export class ChangedFilesTreeProvider implements vscode.TreeDataProvider<TreeNod
     return result;
   }
 
-  getTreeItem(element: TreeNode): vscode.TreeItem {
+  async getTreeItem(element: TreeNode): Promise<vscode.TreeItem> {
     if (element.type === "folder") {
       const item = new vscode.TreeItem(element.name, vscode.TreeItemCollapsibleState.Expanded);
       item.iconPath = vscode.ThemeIcon.Folder;
@@ -138,7 +138,7 @@ export class ChangedFilesTreeProvider implements vscode.TreeDataProvider<TreeNod
     const statusChar = STATUS_ICONS[element.change.status] ?? "?";
     item.description = statusChar;
 
-    const action = this.gitService.getFileAction(element.change, this.mode);
+    const action = await this.gitService.getFileAction(element.change, this.mode);
     if (action.type === "diff") {
       item.command = {
         command: "vscode.diff",
