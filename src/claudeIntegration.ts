@@ -30,30 +30,31 @@ export async function askClaude(): Promise<void> {
   }
 
   const message = `In ${context}, ${request}`;
-  const terminal = findClaudeTerminal();
 
-  if (!terminal) {
-    vscode.window.showWarningMessage(
-      "No Claude Code terminal found. Start Claude Code in the terminal first."
-    );
+  // Try sending to a Claude Code terminal first
+  const terminal = findClaudeTerminal();
+  if (terminal) {
+    terminal.show();
+    terminal.sendText(message);
     return;
   }
 
-  terminal.show();
-  terminal.sendText(message);
+  // Fall back: copy to clipboard and focus Claude Code sidebar
+  await vscode.env.clipboard.writeText(message);
+
+  // Try to focus the Claude Code panel
+  try {
+    await vscode.commands.executeCommand("claude-dev.focus");
+  } catch {
+    // Ignore if command doesn't exist
+  }
+
+  vscode.window.showInformationMessage("Copied to clipboard — paste in Claude Code.");
 }
 
 function findClaudeTerminal(): vscode.Terminal | undefined {
   const terminals = vscode.window.terminals;
-
-  // Look for a terminal running claude (by name)
-  const claudeTerminal = terminals.find(
+  return terminals.find(
     (t) => t.name.toLowerCase().includes("claude") || t.name.toLowerCase().includes("claud")
   );
-  if (claudeTerminal) {
-    return claudeTerminal;
-  }
-
-  // Fall back to the active terminal
-  return vscode.window.activeTerminal;
 }
