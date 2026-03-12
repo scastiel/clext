@@ -83,6 +83,7 @@ export async function activate(context: vscode.ExtensionContext) {
       addReviewComment(reviewProvider)
     ),
     vscode.commands.registerCommand("clext.removeReviewComment", (comment) => {
+      if (comment.id === "") return;
       reviewProvider.remove(comment.id);
     }),
     vscode.commands.registerCommand("clext.copyReviewComments", async () => {

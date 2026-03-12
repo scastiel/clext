@@ -2,6 +2,8 @@
 
 A minimalist VSCode extension for reviewing code changes made by Claude Code.
 
+https://github.com/user-attachments/assets/75a2427f-e8b8-49cb-aada-400bebb3114f
+
 ## Features
 
 ### Diff Mode Switcher
