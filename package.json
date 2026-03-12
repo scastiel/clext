@@ -83,6 +83,10 @@
         "title": "Add Review Comment"
       },
       {
+        "command": "clext.addFileReviewComment",
+        "title": "Add Review Comment"
+      },
+      {
         "command": "clext.copyReviewComments",
         "title": "Copy All Comments",
         "icon": "$(clippy)"
@@ -167,6 +171,11 @@
           "command": "clext.removeReviewComment",
           "when": "view == clext.reviewComments",
           "group": "inline"
+        },
+        {
+          "command": "clext.addFileReviewComment",
+          "when": "view == clext.changedFiles && viewItem == changedFile",
+          "group": "navigation"
         }
       ]
     },

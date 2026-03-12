@@ -84,6 +84,32 @@ export class ReviewCommentsProvider implements vscode.TreeDataProvider<ReviewCom
   }
 }
 
+export function addFileReviewComment(
+  provider: ReviewCommentsProvider,
+  fileNode: { change: { uri: vscode.Uri } }
+): void {
+  const uri = fileNode.change.uri;
+  const filePath = vscode.workspace.asRelativePath(uri);
+
+  vscode.window
+    .showInputBox({
+      prompt: `Review comment for ${filePath}`,
+      placeHolder: "e.g., this file should be split into smaller modules",
+    })
+    .then((text) => {
+      if (!text) {
+        return;
+      }
+      provider.add({
+        filePath,
+        startLine: undefined,
+        endLine: undefined,
+        text,
+        uri,
+      });
+    });
+}
+
 export function addReviewComment(provider: ReviewCommentsProvider): void {
   const editor = vscode.window.activeTextEditor;
   if (!editor) {
