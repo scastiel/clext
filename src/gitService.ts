@@ -132,16 +132,20 @@ export class GitService {
     }
 
     const isAdded = ADDED_STATUSES.has(change.status);
-    const emptyUri = this.api.toGitUri(change.uri, "~");
 
     switch (mode) {
       case DiffMode.Working: {
-        const left = isAdded ? emptyUri : this.api.toGitUri(change.uri, "HEAD");
+        // Untracked/new files don't exist in git, so we can't diff them — just open directly
+        if (isAdded) {
+          return { type: "open" };
+        }
+        const left = this.api.toGitUri(change.uri, "HEAD");
         const right = change.uri;
         return { type: "diff", left, right, title: `${filePath} (Working)` };
       }
 
       case DiffMode.LastCommit: {
+        const emptyUri = this.api.toGitUri(change.uri, "~");
         const left = isAdded ? emptyUri : this.api.toGitUri(change.uri, "HEAD~1");
         const right = this.api.toGitUri(change.uri, "HEAD");
         return { type: "diff", left, right, title: `${filePath} (Last Commit)` };
@@ -155,6 +159,7 @@ export class GitService {
         const resolvedBase = repo ? await this.resolveBaseRef(repo, baseBranch) : baseBranch;
         const mergeBase = repo ? await repo.getMergeBase(resolvedBase, "HEAD") : undefined;
         const baseRef = mergeBase ?? resolvedBase;
+        const emptyUri = this.api.toGitUri(change.uri, "~");
         const left = isAdded ? emptyUri : this.api.toGitUri(change.uri, baseRef);
         const right = this.api.toGitUri(change.uri, "HEAD");
         return { type: "diff", left, right, title: `${filePath} (vs ${baseBranch})` };
